@@ -33,6 +33,8 @@ namespace BrainwaveScroller
             m_mindWaves = new MindWave();
             m_mindWaves.OnAttentionNewValueEvent += OnNewAttenValue;
             m_mindWaves.OnMeditationNewValueEvent += OnNewMeditationValue;
+            m_mindWaves.OnNewStatus += UpdateStatusString;
+            m_mindWaves.OnPoorSiganl += OnPoorSignal;
             
             m_mindWaves.Connect();
 
@@ -41,7 +43,20 @@ namespace BrainwaveScroller
         public void OnNewAttenValue(double dNewAttenVal)
         {
             SetPicBoxHeight(picboxAttention, (int)dNewAttenVal);
+            double dNewTimeInterval = (dNewAttenVal / 100) * 3000 + 200;
+            SetScrollInterval((int)dNewTimeInterval);
         }
+
+       public delegate void  UpdateStatusDelegate(string strStatus);
+       void UpdateStatusString(string strStatus)
+       {
+           Invoke (new UpdateStatusDelegate(
+               delegate
+               {
+                   lblStatus.Text = strStatus;
+               }
+               ) ,strStatus );
+       }
 
         public void OnNewMeditationValue(double dNewMedVal)
         {
@@ -77,6 +92,27 @@ namespace BrainwaveScroller
                 System.Windows.Forms.SendKeys.Send("{PGDN}");
             })
             );
+        }
+
+        public delegate void OnPoorSignalDelegate(bool bPoorSig);
+        public void OnPoorSignal(bool bPoorSig) 
+        {
+            Invoke(new OnPoorSignalDelegate
+                (
+                delegate
+                {
+                    if (bPoorSig)
+                    {
+                        lblStatus.Text = "Poor Signal";
+                        lblStatus.ForeColor = Color.Red;
+                    }
+                    else
+                    {
+                        lblStatus.Text = "BCI ready";
+                        lblStatus.ForeColor = Color.Green;
+                    }
+                }
+                ), bPoorSig);
         }
 
         private void TempScrollerThread()
