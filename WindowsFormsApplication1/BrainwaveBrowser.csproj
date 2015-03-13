@@ -34,6 +34,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -42,12 +43,8 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="ThinkGear">
-      <HintPath>..\..\..\Users\Kagan Moshe\Documents\Visual Studio 2013\Projects\MindWaveApp\ThinkGear_libs\ThinkGear.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MindWave.cs" />
     <Compile Include="WebBrowserForm.cs">
       <SubType>Form</SubType>
     </Compile>

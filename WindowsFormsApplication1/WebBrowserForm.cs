@@ -7,28 +7,51 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Diagnostics;
 //using System.Threading;
 
 namespace BrainwaveScroller
 {
     public partial class WebBrowserForm : Form
     {
+        const long KEY_PRESS_IGNORE_TIME = 200; //milli sec
+
         System.Threading.Thread workerThread = null;
+        int m_nScrollIntervalMilliSec = 500;
+        bool bFormClosing = false;
+        bool bScrollingEnabled = false;
+        Stopwatch m_KeyPressStopwatch = new Stopwatch();
+        
 
         public WebBrowserForm()
         {
             InitializeComponent();
 
+            m_KeyPressStopwatch.Start();
+            StartWorkerThread();
         }
 
-        // ~WebForm()
-        //{
-        //    workerThread.Abort();
-        //}
+        private void SetScrollInterval(int nScrollInterval)
+        {
+            m_nScrollIntervalMilliSec = nScrollInterval;
+        }
+
+        private void EnableScrolling(bool bEnable)
+        {
+            bScrollingEnabled = bEnable;
+        }
+
+        private void ToggleScrollingEnabled()
+        {
+            bScrollingEnabled = !bScrollingEnabled;
+        }
 
         public delegate void ScrollDownDelegate();
         public void ScrollDown()
         {
+            if (false == bScrollingEnabled)
+                return;
+
             Invoke(new ScrollDownDelegate(
             delegate
             {
@@ -41,18 +64,15 @@ namespace BrainwaveScroller
 
         private void TempScrollerThread()
         {
-            //System.Threading.Thread.Sleep(7000);
-            while (true)
+            while (false == bFormClosing)
             {
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(m_nScrollIntervalMilliSec);
                 ScrollDown();
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void StartWorkerThread()
         {
-            //mainWebBrowser.AutoScrollOffset = new Point(0, 1000);
-            //ScrollDown();
 
             if (null == workerThread)
             {
@@ -60,5 +80,33 @@ namespace BrainwaveScroller
                 workerThread.Start();
             }
         }
+
+        private void WebBrowserForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            bFormClosing = true;
+        }
+
+        private void mainWebBrowser_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (e.KeyCode == Keys.Up)
+            {
+                if (m_KeyPressStopwatch.ElapsedMilliseconds < KEY_PRESS_IGNORE_TIME)
+                    return;
+
+                ToggleScrollingEnabled();
+                m_KeyPressStopwatch.Restart();
+                
+            }
+        }
+
+        private void SetPicBoxHeight(PictureBox picBox , int nHeight)
+        {
+            if (nHeight < 0 || nHeight > 100)
+                return;
+
+            picBox.Location = new Point(picBox.Location.X, picBox.Location.Y - nHeight + picBox.Height);
+            picBox.Height = nHeight;
+        }
+
     }
 }
