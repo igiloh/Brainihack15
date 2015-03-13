@@ -21,7 +21,7 @@ namespace BrainwaveScroller
         bool bFormClosing = false;
         bool bScrollingEnabled = false;
         Stopwatch m_KeyPressStopwatch = new Stopwatch();
-        
+        MindWave m_mindWaves;
 
         public WebBrowserForm()
         {
@@ -29,6 +29,23 @@ namespace BrainwaveScroller
 
             m_KeyPressStopwatch.Start();
             StartWorkerThread();
+
+            m_mindWaves = new MindWave();
+            m_mindWaves.OnAttentionNewValueEvent += OnNewAttenValue;
+            m_mindWaves.OnMeditationNewValueEvent += OnNewMeditationValue;
+            
+            m_mindWaves.Connect();
+
+        }
+
+        public void OnNewAttenValue(double dNewAttenVal)
+        {
+            SetPicBoxHeight(picboxAttention, (int)dNewAttenVal);
+        }
+
+        public void OnNewMeditationValue(double dNewMedVal)
+        {
+            SetPicBoxHeight(picboxMeditation, (int)dNewMedVal);
         }
 
         private void SetScrollInterval(int nScrollInterval)
@@ -99,13 +116,19 @@ namespace BrainwaveScroller
             }
         }
 
+        private delegate void SetPicBoxHeightDelegatePictureBox (PictureBox picBox , int nHeight);
         private void SetPicBoxHeight(PictureBox picBox , int nHeight)
         {
-            if (nHeight < 0 || nHeight > 100)
-                return;
+            Invoke (new SetPicBoxHeightDelegatePictureBox(
+            delegate
+            {
+                if (nHeight < 0 || nHeight > 100)
+                    return;
 
-            picBox.Location = new Point(picBox.Location.X, picBox.Location.Y - nHeight + picBox.Height);
-            picBox.Height = nHeight;
+                picBox.Location = new Point(picBox.Location.X, picBox.Location.Y - nHeight + picBox.Height);
+                picBox.Height = nHeight;
+            }
+            ) ,picBox , nHeight );
         }
 
     }

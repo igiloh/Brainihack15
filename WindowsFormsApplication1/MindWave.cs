@@ -44,7 +44,6 @@ namespace BrainwaveScroller
         public MindWave()
         {
             initConnector();
-            this.m_Connector.ConnectScan(m_LastPortUsed);
         }
 
         // Properties
@@ -53,6 +52,11 @@ namespace BrainwaveScroller
         }
 
         // Methodes
+        public void Connect()
+        {
+            this.m_Connector.ConnectScan(m_LastPortUsed);
+        }
+
         private void initConnector()
         {
             this.m_Connector.DeviceConnected += new EventHandler(OnDeviceConnected);
@@ -65,14 +69,16 @@ namespace BrainwaveScroller
 
         private void OnDeviceValidating(object sender, EventArgs e)
         {
-            OnNewStatus("Validating");
+            if (null != OnNewStatus)
+                OnNewStatus("Validating");
         }
 
         private void OnDeviceDisconnected(object sender, EventArgs e)
         {
             Connector.DeviceEventArgs deviceEventArgs = (Connector.DeviceEventArgs)e;
 
-            OnNewStatus("Disconnected from device: " + deviceEventArgs.Device.PortName);
+            if (null != OnNewStatus) 
+                OnNewStatus("Disconnected from device: " + deviceEventArgs.Device.PortName);
             deviceEventArgs.Device.DataReceived -= OnDataReceived;
             initParams();
         }
@@ -90,13 +96,15 @@ namespace BrainwaveScroller
 
         private void OnDeviceNotFound(object sender, EventArgs e)
         {
-            OnNewStatus("No device founds :(");
+            if (null != OnNewStatus) 
+                OnNewStatus("No device founds :(");
         }
 
         private void OnDeviceFound(object sender, EventArgs e)
         {
             Connector.DeviceEventArgs deviceEventArgs = (Connector.DeviceEventArgs)e;
-            OnNewStatus("The device " + deviceEventArgs.Device.PortName + " found");
+            if (null != OnNewStatus) 
+                OnNewStatus("The device " + deviceEventArgs.Device.PortName + " found");
         }
 
         private void OnDeviceConnected(object sender, EventArgs e)
@@ -104,7 +112,8 @@ namespace BrainwaveScroller
             Connector.DeviceEventArgs deviceEventArgs = (Connector.DeviceEventArgs)e;
 
             this.m_LastPortUsed = deviceEventArgs.Device.PortName;
-            OnNewStatus("New Headset Created: " + this.m_LastPortUsed);
+            if (null != OnNewStatus) 
+                OnNewStatus("New Headset Created: " + this.m_LastPortUsed);
             deviceEventArgs.Device.DataReceived += new EventHandler(OnDataReceived);
         }
 
@@ -153,11 +162,13 @@ namespace BrainwaveScroller
                     {
                         if (itIsPoorSignal())
                         {
-                            OnPoorSiganl(true);                                   
+                            if (null != OnPoorSiganl)
+                                OnPoorSiganl(true);                                   
                         }
                         else
                         {
-                            OnPoorSiganl(false);
+                            if (null != OnPoorSiganl)
+                                OnPoorSiganl(false);
                         }
                     }
 
