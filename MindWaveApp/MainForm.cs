@@ -29,6 +29,7 @@ namespace MindWaveApp
         private const double k_BllonImgW = 90;
         private const double k_BllonImgH = 100;
 
+   
         // Data Members
         private readonly List<TextBox> r_ResultTextBoxs = new List<TextBox>();
         private Connector m_Connector = new Connector();
