@@ -39,6 +39,9 @@ namespace BrainwaveScroller
         CsvToEEG m_csvReader;
         Timer m_tNeuroSteerReadTimer;
 
+        double m_dFilteredAtten = 0;
+        double m_dPrevAtten = 0; 
+
         public WebBrowserForm()
         {
             InitializeComponent();
@@ -103,8 +106,39 @@ namespace BrainwaveScroller
         public void OnNewAttenValue(double dNewAttenVal)
         {
             SetPicBoxHeight(picboxAttention, (int)dNewAttenVal);
-            double dNewTimeInterval = (dNewAttenVal / 100) * 1000 + 100;
-            SetScrollInterval((int)dNewTimeInterval);
+
+            SetScrollInterval((int)CalcIntervalFromAtten(dNewAttenVal));
+        }
+
+        private double CalcIntervalFromAtten(double atten)
+        {
+            const double dFactor = 0.7;
+            const bool bUseDeltas = true;
+
+            double dNewTimeInterval;
+
+            if (bUseDeltas)
+            {
+                //m_dFilteredAtten = dFactor * m_dFilteredAtten + (1.0d - dFactor) * atten;
+                //double delta = atten - m_dFilteredAtten;
+
+                m_dFilteredAtten = dFactor * (m_dFilteredAtten + atten - m_dPrevAtten);
+                m_dPrevAtten = atten;
+
+                //double delta = m_dFilteredAtten;
+                //Console.WriteLine(delta.ToString());
+
+                if (m_dFilteredAtten > 8)
+                    return 3000;
+                else if (m_dFilteredAtten < -7)
+                    return 250;
+                else
+                    return m_nScrollIntervalMilliSec;
+            }
+            else
+                dNewTimeInterval = (atten / 100) * 1000 + 100;
+
+            return dNewTimeInterval;
         }
 
        public delegate void  UpdateStatusDelegate(string strStatus);
