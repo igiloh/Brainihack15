@@ -8,17 +8,26 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+
 //using System.Threading;
 
 namespace BrainwaveScroller
 {
     public partial class WebBrowserForm : Form
     {
+        [DllImport("user32.dll")]
+        static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
+
+        //[DllImport("user32.dll", SetLastError = true)]
+        //static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
+
         const long KEY_PRESS_IGNORE_TIME = 200; //milli sec
+        const uint MOUSEEVENTF_WHEEL = 0x0800;
 
         System.Threading.Thread workerThread = null;
-        int m_nScrollIntervalMilliSec = 500;
-        bool bFormClosing = false;
+        int m_nScrollIntervalMilliSec = 130;
+        volatile bool bFormClosing = false;
         bool bScrollingEnabled = false;
         Stopwatch m_KeyPressStopwatch = new Stopwatch();
         MindWave m_mindWaves;
@@ -43,13 +52,16 @@ namespace BrainwaveScroller
         public void OnNewAttenValue(double dNewAttenVal)
         {
             SetPicBoxHeight(picboxAttention, (int)dNewAttenVal);
-            double dNewTimeInterval = (dNewAttenVal / 100) * 3000 + 200;
+            double dNewTimeInterval = (dNewAttenVal / 100) * 1000 + 30;
             SetScrollInterval((int)dNewTimeInterval);
         }
 
        public delegate void  UpdateStatusDelegate(string strStatus);
        void UpdateStatusString(string strStatus)
        {
+           if (bFormClosing)
+               return;
+
            Invoke (new UpdateStatusDelegate(
                delegate
                {
@@ -81,7 +93,7 @@ namespace BrainwaveScroller
         public delegate void ScrollDownDelegate();
         public void ScrollDown()
         {
-            if (false == bScrollingEnabled)
+            if (false == bScrollingEnabled || true == bFormClosing)
                 return;
 
             Invoke(new ScrollDownDelegate(
@@ -89,7 +101,9 @@ namespace BrainwaveScroller
             {
                 if (false == mainWebBrowser.Focused)
                     mainWebBrowser.Focus();
-                System.Windows.Forms.SendKeys.Send("{PGDN}");
+                //System.Windows.Forms.SendKeys.Send("{PGDN}");
+                //mainWebBrowser.AutoScrollOffset = new Point(mainWebBrowser.AutoScrollOffset.X, mainWebBrowser.AutoScrollOffset.Y + 10);
+                mouse_event(MOUSEEVENTF_WHEEL, 0, 0, unchecked((uint) - 120), UIntPtr.Zero);
             })
             );
         }
@@ -105,11 +119,13 @@ namespace BrainwaveScroller
                     {
                         lblStatus.Text = "Poor Signal";
                         lblStatus.ForeColor = Color.Red;
+                        EnableScrolling(false);
                     }
                     else
                     {
                         lblStatus.Text = "BCI ready";
                         lblStatus.ForeColor = Color.Green;
+                        EnableScrolling(true);
                     }
                 }
                 ), bPoorSig);
@@ -136,7 +152,9 @@ namespace BrainwaveScroller
 
         private void WebBrowserForm_FormClosing(object sender, FormClosingEventArgs e)
         {
+            m_mindWaves.CloseMindWave();
             bFormClosing = true;
+            //workerThread. 
         }
 
         private void mainWebBrowser_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
