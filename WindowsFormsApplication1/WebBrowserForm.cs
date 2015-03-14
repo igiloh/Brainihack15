@@ -14,13 +14,18 @@ using System.Runtime.InteropServices;
 
 namespace BrainwaveScroller
 {
+    enum BciHeadsetType
+    {
+        NEUROSKY = 0,
+        NEUROSTEER
+    }
+
     public partial class WebBrowserForm : Form
     {
         [DllImport("user32.dll")]
         static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint dwData, UIntPtr dwExtraInfo);
 
-        //[DllImport("user32.dll", SetLastError = true)]
-        //static extern uint SendInput(uint nInputs, ref INPUT pInputs, int cbSize);
+        const BciHeadsetType currHeadsetType = BciHeadsetType.NEUROSKY;
 
         const long KEY_PRESS_IGNORE_TIME = 200; //milli sec
         const uint MOUSEEVENTF_WHEEL = 0x0800;
@@ -31,6 +36,8 @@ namespace BrainwaveScroller
         bool bScrollingEnabled = false;
         Stopwatch m_KeyPressStopwatch = new Stopwatch();
         MindWave m_mindWaves;
+        CsvToEEG m_csvReader;
+        Timer m_tNeuroSteerReadTimer;
 
         public WebBrowserForm()
         {
@@ -39,20 +46,64 @@ namespace BrainwaveScroller
             m_KeyPressStopwatch.Start();
             StartWorkerThread();
 
+            switch (currHeadsetType)
+            {
+                case BciHeadsetType.NEUROSKY:
+                    InitNeuroSky();
+                    break;
+                case BciHeadsetType.NEUROSTEER:
+                    InitNeroSteer();
+                    break;
+                default:
+                    break;
+            }
+
+        }
+
+        void InitNeuroSky()
+        {
             m_mindWaves = new MindWave();
             m_mindWaves.OnAttentionNewValueEvent += OnNewAttenValue;
             m_mindWaves.OnMeditationNewValueEvent += OnNewMeditationValue;
             m_mindWaves.OnNewStatus += UpdateStatusString;
             m_mindWaves.OnPoorSiganl += OnPoorSignal;
-            
+
             m_mindWaves.Connect();
+        }
+
+        void InitNeroSteer()
+        {
+            m_csvReader = new CsvToEEG();
+            m_tNeuroSteerReadTimer.Interval = 1000;
+            m_tNeuroSteerReadTimer.Tick += m_tNeuroSteerReadTimer_Tick;
+            m_tNeuroSteerReadTimer.Start();
+        }
+
+        void m_tNeuroSteerReadTimer_Tick(object sender, EventArgs e)
+        {
+            Dictionary<String, double> data;
+            if (m_csvReader.readData(@"C:\temp\test.csv"))
+            {
+                data = m_csvReader.GetEEG;
+
+
+                try
+                {
+                    double e2 = data["e2"];
+                    double dAttention = ((e2 + 6) / 12) * 100;
+                    OnNewAttenValue(dAttention);
+                }
+                catch (Exception)
+                {
+                }
+            }
 
         }
 
         public void OnNewAttenValue(double dNewAttenVal)
         {
             SetPicBoxHeight(picboxAttention, (int)dNewAttenVal);
-            double dNewTimeInterval = (dNewAttenVal / 100) * 1000 + 30;
+            double dNewTimeInterval = (dNewAttenVal / 100) * 1000 + 100;
             SetScrollInterval((int)dNewTimeInterval);
         }
 
@@ -152,7 +203,9 @@ namespace BrainwaveScroller
 
         private void WebBrowserForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            m_mindWaves.CloseMindWave();
+            if (currHeadsetType == BciHeadsetType.NEUROSKY)
+                m_mindWaves.CloseMindWave();
+
             bFormClosing = true;
             //workerThread. 
         }

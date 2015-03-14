@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 
-namespace ReadCsvFile
+namespace BrainwaveScroller
 {
-    class CsvToEEG
+    public class CsvToEEG
     {
         // Const Members
         public const String k_theta = "theta";
@@ -54,29 +54,34 @@ namespace ReadCsvFile
 
         public bool readData(String i_filePath)
         {
+            bool res = false;
+
             // Return True if it succeeded
             try
             {
-                m_Data = File.ReadAllText(@"C:\temp\test.csv").Split(',');
+                int countData = 0;
+
+                m_Data = File.ReadAllText(i_filePath).Split(',');
+                foreach (String item in m_Data)
+                {
+                    countData++;
+                }
+
+                if (countData == k_NumOfInstanceInTheCSV)
+                {
+                    parseData();
+                    res = true;
+                }
+
             }
+
             catch (Exception)
             {
                 
             } 
            
-            bool res = false;
-            int countData = 0;
-            
-            foreach (String item in m_Data)
-            {
-                countData++;
-            }
 
-            if (countData == k_NumOfInstanceInTheCSV)
-            {
-                parseData();
-                res = true;
-            }
+            
 
             return res;
         }

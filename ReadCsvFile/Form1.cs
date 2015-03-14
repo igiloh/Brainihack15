@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace ReadCsvFile
+namespace BrainwaveScroller
 {
     public partial class Form1 : Form
     {
@@ -22,7 +22,7 @@ namespace ReadCsvFile
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (EEG.readData(""))
+            if (EEG.readData(@"C:\temp\test.csv"))
             {
                 m_Data = EEG.GetEEG;
                 updateGrafe(EEG.GetEEG);

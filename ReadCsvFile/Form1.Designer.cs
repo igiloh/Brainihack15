@@ -1,4 +1,4 @@
-﻿namespace ReadCsvFile
+﻿namespace BrainwaveScroller
 {
     partial class Form1
     {
